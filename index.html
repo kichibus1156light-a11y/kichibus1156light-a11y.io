@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>コロニー落とし ブリティッシュ作戦 ─ U.C.0079 3Dドキュメンタリー</title>
+<meta name="description" content="宇宙世紀0079、一週間戦争における「コロニー落とし（ブリティッシュ作戦）」をTV特番風の3D俯瞰デモで再現。地球地形・ジオン／連邦の軍勢・進行矢印・コロニー断裂・落下地点までを滑らかなカメラワークで解説します。">
+<meta name="theme-color" content="#03060e">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.webmanifest">
+
+<link rel="stylesheet" href="vendor/fontawesome-all.min.css">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- ================= 3Dステージ ================= -->
+<canvas id="stage-canvas" aria-label="コロニー落とし 3Dシミュレーション"></canvas>
+<div id="stage-vignette" aria-hidden="true"></div>
+<div id="stage-scan" aria-hidden="true"></div>
+<div id="flash-overlay" aria-hidden="true"></div>
+
+<!-- HUDのコーナー装飾 -->
+<div id="hud-frame" aria-hidden="true">
+  <span class="tl"></span><span class="tr"></span><span class="bl"></span><span class="br"></span>
+</div>
+
+<!-- 3D空間に追従するラベル -->
+<div id="world-labels" aria-hidden="true"></div>
+
+<!-- ================= 上部：番組ID と 日時 ================= -->
+<header id="hud-top" class="hud">
+  <div id="program-id">
+    <div id="program-mark"><i class="fa-solid fa-meteor" aria-hidden="true"></i></div>
+    <div id="program-text">
+      <div class="pt-1">UNIVERSAL CENTURY 0079</div>
+      <div class="pt-2">検証：コロニー落とし ブリティッシュ作戦</div>
+    </div>
+  </div>
+  <div id="clock">
+    <div id="clock-date">U.C.0079.01.03</div>
+    <div id="clock-time">00:00</div>
+    <div id="clock-label">MISSION TIME</div>
+  </div>
+</header>
+
+<!-- ================= 章バッジ ================= -->
+<aside id="chapter-badge" aria-live="polite">
+  <div id="chapter-no">CH.01</div>
+  <div id="chapter-title">プロローグ　宇宙世紀</div>
+  <div id="chapter-sub">U.C.0079 — 人類の半数が宇宙に住んでいた</div>
+</aside>
+
+<!-- ================= カメラタグ ================= -->
+<div id="cam-info">
+  <span class="rec-dot" aria-hidden="true"></span>
+  <span id="cam-tag">CAM 01 / WIDE ORBIT</span>
+</div>
+
+<!-- ================= テレメトリ ================= -->
+<section id="telemetry" aria-label="コロニー飛行データ">
+  <h4>COLONY TELEMETRY</h4>
+  <div class="tm-row"><span class="k">ALTITUDE</span><span><span class="v" id="alt-value">0</span><span class="u">km</span></span></div>
+  <div class="tm-row"><span class="k">VELOCITY</span><span><span class="v" id="vel-value">0.0</span><span class="u">km/s</span></span></div>
+  <div id="stat-track"><div id="stat-bar"></div></div>
+</section>
+
+<!-- ================= 年表（左） ================= -->
+<section id="chrono-panel" aria-label="戦況年表">
+  <h4>CHRONOLOGY / 戦況記録</h4>
+  <ul id="chrono-list"></ul>
+</section>
+
+<!-- ================= データパネル（右） ================= -->
+<section id="data-panel" aria-label="作戦データ"></section>
+
+<!-- ================= ローワーサード テロップ ================= -->
+<section id="telop" aria-live="polite">
+  <div id="telop-kicker">UNIVERSAL CENTURY 0079</div>
+  <div id="telop-body">
+    <div id="telop-title">コロニー落とし</div>
+    <div id="telop-sub">OPERATION BRITISH</div>
+  </div>
+</section>
+
+<!-- ================= 字幕 ================= -->
+<p id="subtitle" aria-live="polite"></p>
+
+<!-- ================= 警報バナー ================= -->
+<div id="impact-alert" role="alert">
+  <div id="impact-alert-box">
+    <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+    <span id="impact-alert-text">警報</span>
+  </div>
+</div>
+
+<!-- ================= 下部コントロール ================= -->
+<footer id="hud-bottom" class="hud">
+  <div id="seek-wrap">
+    <div id="seek" role="slider" aria-label="再生位置" aria-valuemin="0" aria-valuemax="268" aria-valuenow="0" tabindex="0">
+      <div id="seek-fill"></div>
+      <div id="seek-head"></div>
+    </div>
+  </div>
+  <nav id="controls" aria-label="再生コントロール">
+    <button type="button" class="ctl" id="btn-prev" aria-label="前の章"><i class="fa-solid fa-backward-step"></i></button>
+    <button type="button" class="ctl" id="btn-play" aria-label="再生"><i class="fa-solid fa-play"></i></button>
+    <button type="button" class="ctl" id="btn-next" aria-label="次の章"><i class="fa-solid fa-forward-step"></i></button>
+    <button type="button" class="ctl" id="btn-speed" aria-label="再生速度">×1</button>
+    <div id="time-code"><span id="time-cur">00:00</span><span class="sep">/</span><span id="time-dur">04:28</span></div>
+    <div id="ctl-spacer"></div>
+    <span class="ctl-hint">ドラッグ・ピンチで自由視点</span>
+    <button type="button" class="ctl" id="btn-cam" aria-label="自由視点カメラ" aria-pressed="false"><i class="fa-solid fa-video"></i></button>
+    <button type="button" class="ctl" id="btn-sound" aria-label="音声"><i class="fa-solid fa-volume-xmark"></i></button>
+    <button type="button" class="ctl" id="btn-menu" aria-label="章一覧"><i class="fa-solid fa-list-ul"></i></button>
+    <button type="button" class="ctl" id="btn-full" aria-label="全画面"><i class="fa-solid fa-expand"></i></button>
+  </nav>
+</footer>
+
+<!-- ================= 章メニュー ================= -->
+<div id="chapter-menu">
+  <header>
+    <h2>CHAPTERS<small>番組チャプター</small></h2>
+    <button type="button" class="ctl" id="btn-menu-close" aria-label="閉じる"><i class="fa-solid fa-xmark"></i></button>
+  </header>
+  <div id="chapter-menu-list"></div>
+</div>
+
+<!-- ================= イントロ ================= -->
+<div id="intro">
+  <div id="intro-mark"><i class="fa-solid fa-meteor" aria-hidden="true"></i></div>
+  <div class="i-uc">U.C.0079 / ONE WEEK BATTLE</div>
+  <h1>コロニー落とし</h1>
+  <div class="i-en">O P E R A T I O N &nbsp; B R I T I S H</div>
+  <p class="i-lead">
+    宇宙世紀0079年1月。ジオン公国は無人化した全長36kmのスペースコロニーを質量兵器へ改装し、
+    地球連邦軍総司令部ジャブローへ落下させる作戦を発動した。<br>
+    連邦軍の核攻撃で断裂したコロニーは軌道を逸れ、オーストラリア大陸へ——。<br>
+    その一連の経過を、TV特番形式の3D俯瞰デモで再構成する。
+  </p>
+  <button type="button" id="btn-start">番組を再生する</button>
+  <p class="i-note">
+    所要 約4分30秒 ／ 音声はブラウザの制限により再生開始時に有効化されます<br>
+    画面をドラッグ・ピンチすると自由視点に切り替わります
+  </p>
+</div>
+
+<!-- ================= 終了カード ================= -->
+<div id="end-card">
+  <div class="e-k">U.C.0079.01.10 &nbsp;/&nbsp; AFTERMATH</div>
+  <h2>一週間戦争 ─ 帰結</h2>
+  <div class="e-sub">THE ONE WEEK BATTLE</div>
+  <ul id="damage-list">
+    <li><div class="d-k">CASUALTIES</div><div class="d-v">約27億人</div><div class="d-n">総人口の約半数</div></li>
+    <li><div class="d-k">DURATION</div><div class="d-v">7日間</div><div class="d-n">開戦から停戦まで</div></li>
+    <li><div class="d-k">IMPACT SITES</div><div class="d-v">3か所</div><div class="d-n">豪州／南太平洋／北米</div></li>
+    <li><div class="d-k">CRATER</div><div class="d-v">約500km</div><div class="d-n">シドニー湾の直径</div></li>
+  </ul>
+  <p class="e-quote">
+    ジャブローへの直撃は回避されたが、質量兵器がもたらした破壊は地球環境そのものを変えた。
+    両軍は南極条約を締結し、核・生物・化学兵器およびコロニー落としの禁止を取り決める。<br>
+    ——一年戦争は、ここから始まる。
+  </p>
+  <button type="button" id="btn-restart">もう一度再生する</button>
+  <p class="e-src">
+    構成典拠：Wikipedia「コロニー落とし」「一週間戦争」ほか 宇宙世紀公式年表<br>
+    本コンテンツはファンによる非公式の可視化デモです。コロニー・艦艇は視認性のため誇張スケールで表示しています。
+  </p>
+</div>
+
+<!-- ================= ローダー ================= -->
+<div id="loader">
+  <div class="l-ring" aria-hidden="true"></div>
+  <div class="l-txt">LOADING ORBITAL DATA…</div>
+</div>
+
+<!-- ================= スクリプト ================= -->
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+<script>window.DEBUG_T=null;</script>
+<script src="js/data.js"></script>
+<script src="js/scene.js"></script>
+<script src="js/camera.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/main.js"></script>
+<script>
+if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+  window.addEventListener('load', function () { navigator.serviceWorker.register('./sw.js').catch(function () {}); });
+}
+</script>
+</body>
+</html>
